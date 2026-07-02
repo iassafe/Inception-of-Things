@@ -1,0 +1,101 @@
+global:
+  minio:
+    enabled: true
+  hosts:
+    domain: k3d.local
+    https: false
+  ingress:
+    enabled: true
+    class: traefik
+    configureCertmanager: false
+    tls:
+      enabled: false
+  appConfig:
+    enableUsagePing: false
+    enableSeatLink: false
+  time_zone: UTC
+  kas:
+    enabled: false
+
+installCertmanager: false
+nginx-ingress:
+  enabled: false
+prometheus:
+  install: false
+gitlab-runner:
+  install: false
+gitlab-kas:
+  enabled: false
+
+postgresql:
+  install: true
+  metrics:
+    enabled: false
+  primary:
+    persistence:
+      enabled: false
+
+redis:
+  install: true
+  metrics:
+    enabled: false
+  master:
+    persistence:
+      enabled: false
+
+minio:
+  persistence:
+    enabled: false
+
+registry:
+  enabled: false
+
+gitlab:
+  webservice:
+    minReplicas: 1
+    maxReplicas: 1
+    service:
+      type: NodePort
+      nodePort: 30080
+    puma:
+      workers: 0
+      minThreads: 4
+      maxThreads: 4
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+
+  sidekiq:
+    minReplicas: 1
+    maxReplicas: 1
+    concurrency: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+
+  gitaly:
+    persistence:
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+
+  gitlab-shell:
+    minReplicas: 1
+    maxReplicas: 1
+    service:
+      type: NodePort
+      nodePort: 30022
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+  toolbox:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi

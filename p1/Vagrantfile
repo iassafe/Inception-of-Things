@@ -1,0 +1,42 @@
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+SERVER_IP   = "192.168.56.110"
+WORKER_IP   = "192.168.56.111"
+NODE_TOKEN  = "/vagrant/scripts/node_token"
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box               = "debian/bookworm64"0
+  config.vm.box_check_update  = false
+
+  config.vm.define "iassafeS" do |server|
+    server.vm.hostname = "iassafeS"
+    server.vm.network "private_network", ip: SERVER_IP
+
+    server.vm.provider "virtualbox" do |vb|
+      vb.name   = "iassafeS"
+      vb.memory = 2048
+      vb.cpus   = 1
+    end
+
+    server.vm.provision "shell",
+      path: "scripts/setup_server.sh",
+      env:  { "SERVER_IP" => SERVER_IP, "NODE_TOKEN" => NODE_TOKEN }
+  end
+
+  config.vm.define "iassafeSW" do |worker|
+    worker.vm.hostname = "iassafeSW"
+    worker.vm.network "private_network", ip: WORKER_IP
+
+    worker.vm.provider "virtualbox" do |vb|
+      vb.name   = "iassafeSW"
+      vb.memory = 2048
+      vb.cpus   = 1
+    end
+
+    worker.vm.provision "shell",
+      path: "scripts/setup_agent.sh",
+      env:  { "SERVER_IP" => SERVER_IP, "NODE_TOKEN" => NODE_TOKEN }
+  end
+
+end

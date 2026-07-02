@@ -1,0 +1,27 @@
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+SERVER_IP = "192.168.56.110"
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box              = "debian/bookworm64"
+  config.vm.box_check_update = false
+
+  config.vm.define "iassafeS" do |server|
+    server.vm.hostname = "iassafeS"
+    server.vm.network "private_network", ip: SERVER_IP
+
+    server.vm.provider "virtualbox" do |vb|
+      vb.name   = "iassafeS"
+      vb.memory = 2048
+      vb.cpus   = 2
+    end
+
+    server.vm.synced_folder "confs", "/vagrant/confs"
+
+    server.vm.provision "shell",
+      path: "scripts/setup_server.sh",
+      env:  { "SERVER_IP" => SERVER_IP }
+  end
+
+end
