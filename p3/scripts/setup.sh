@@ -51,8 +51,8 @@ echo -e "${GREEN}✓ Namespaces created${NC}"
 
 # [3/6] Argo CD
 echo -e "${YELLOW}[3/6] Argo CD...${NC}"
-kubectl apply -n argocd \
-    -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml || true
+kubectl apply --server-side -n argocd \
+    -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl wait --for=condition=available --timeout=300s \
     deployment/argocd-server -n argocd
 echo -e "${GREEN}✓ Argo CD ready${NC}"
@@ -70,7 +70,7 @@ REPO_DIR="${HOME}/${GITHUB_REPO}"
 
 if [ ! -d "$REPO_DIR" ]; then
     print_info "Cloning repo..."
-    git clone "https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git" "$REPO_DIR"
+    git clone "git@github.com:${GITHUB_USER}/${GITHUB_REPO}.git" "$REPO_DIR"
 fi
 
 cd "$REPO_DIR"
@@ -85,7 +85,7 @@ git add p3/confs/deployment.yaml
 
 if ! git diff --cached --quiet; then
     git commit -m "P3: add deployment manifest"
-    print_info "Pushing to GitHub (you will be prompted for credentials)..."
+    print_info "Pushing to GitHub..."
     git push -u origin main
     print_info "Push successful!"
 else
