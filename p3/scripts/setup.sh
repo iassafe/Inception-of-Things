@@ -38,7 +38,6 @@ if k3d cluster list | grep -q "iot-cluster"; then
 fi
 k3d cluster create iot-cluster \
     --port "8888:30080@server:0" \
-    --port "8080:80@loadbalancer" \
     --wait
 sleep 10
 echo -e "${GREEN}✓ Cluster ready${NC}"
@@ -97,32 +96,73 @@ echo -e "${GREEN}✓ App files pushed to GitHub${NC}"
 
 # [6/6] Apply Argo CD Application
 echo -e "${YELLOW}[6/6] Applying Argo CD Application...${NC}"
+
 kubectl apply -f "${SCRIPT_DIR}/../confs/argocd-app.yaml"
 
-# Expose Argo CD via port-forward
-pkill -f "kubectl port-forward.*argocd" 2>/dev/null || true
-kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0 \
-    > /tmp/argocd-pf.log 2>&1 &
+echo "Waiting for application deployment..."
 
-sleep 20
+until kubectl get deployment playground -n dev >/dev/null 2>&1; do
+    sleep 2
+done
+
+echo "Waiting for Argo CD server..."
+
+kubectl wait \
+    --for=condition=Ready \
+    pod \
+    -l app.kubernetes.io/name=argocd-server \
+    -n argocd \
+    --timeout=600s
+
 kubectl get applications -n argocd
+
 echo -e "${GREEN}✓ Argo CD Application applied${NC}"
+
+# Start Argo CD port-forward only if port 8080 is free
+if ! ss -ltn | grep -q ":8080 "; then
+    print_info "Starting Argo CD on port 8080..."
+    nohup kubectl port-forward svc/argocd-server \
+        -n argocd \
+        8080:443 \
+        --address 0.0.0.0 \
+        >/tmp/argocd.log 2>&1 &
+    sleep 5
+else
+    print_warning "Port 8080 is already in use. Skipping port-forward."
+fi
 
 echo ""
 echo "================================================"
 echo -e "${GREEN}Setup Complete!${NC}"
 echo "================================================"
 echo ""
-echo "ArgoCD : http://${DROPLET_IP}:8080  (admin / ${ARGOCD_PASSWORD})"
-echo "App    : curl http://${DROPLET_IP}:8888/"
+
+echo "Application:"
+echo "  curl http://${DROPLET_IP}:8888/"
 echo ""
 
-sleep 10
-if curl -s "http://localhost:8888/" 2>/dev/null | grep -q "v1"; then
-    echo -e "${GREEN}✓ App is responding!${NC}"
-    curl -s "http://localhost:8888/"
-else
-    print_warning "App may still be syncing. Try: kubectl get pods -n dev"
-fi
+echo "Argo CD:"
+echo "  http://${DROPLET_IP}:8080"
+echo ""
+
+echo "Login:"
+echo "  Username: admin"
+echo "  Password: ${ARGOCD_PASSWORD}"
+echo ""
+
+print_info "Waiting for app to be ready..."
+for i in {1..30}; do
+    if curl -s "http://localhost:8888/" 2>/dev/null | grep -q "v1"; then
+        echo -e "${GREEN}✓ App is responding!${NC}"
+        curl -s "http://localhost:8888/"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        print_warning "App may still be syncing. Try: kubectl get pods -n dev"
+    fi
+    echo -n "."
+    sleep 5
+done
+
 echo ""
 echo -e "${GREEN}Done!${NC}"
