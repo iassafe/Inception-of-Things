@@ -1,43 +1,36 @@
 #!/bin/bash
-
 set -e
-
-echo "=========================================="
-echo "           Tools Installation             "
-echo "=========================================="
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}[1/4] Checking Docker...${NC}"
-if ! command -v docker &> /dev/null; then
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
-    rm get-docker.sh
-fi
-echo -e "${GREEN}✓ Docker${NC}"
+ok()   { echo -e "${GREEN}✓ $1${NC}"; }
+info() { echo -e "${YELLOW}► $1${NC}"; }
 
-echo -e "${YELLOW}[2/4] Checking kubectl...${NC}"
-if ! command -v kubectl &> /dev/null; then
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+echo "======================================"
+echo "   P3 — Tools Installation"
+echo "======================================"
+
+info "Docker..."
+command -v docker &>/dev/null || curl -fsSL https://get.docker.com | sh
+ok "Docker"
+
+info "kubectl..."
+if ! command -v kubectl &>/dev/null; then
+    curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
     rm kubectl
 fi
-echo -e "${GREEN}✓ kubectl${NC}"
+ok "kubectl"
 
-echo -e "${YELLOW}[3/4] Checking k3d...${NC}"
-if ! command -v k3d &> /dev/null; then
-    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-fi
-echo -e "${GREEN}✓ k3d${NC}"
+info "k3d..."
+command -v k3d &>/dev/null || curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+ok "k3d"
 
-echo -e "${YELLOW}[4/4] Checking Git...${NC}"
-if ! command -v git &> /dev/null; then
-    apt-get update -qq
-    apt-get install -y -qq git
-fi
-echo -e "${GREEN}✓ Git${NC}"
+info "Git..."
+command -v git &>/dev/null || apt-get install -y -qq git
+ok "Git"
 
 echo ""
-echo "All tools installed!"
+ok "All tools installed!"
