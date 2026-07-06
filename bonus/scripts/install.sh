@@ -5,29 +5,36 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}[1/5] Docker...${NC}"
-command -v docker || curl -fsSL https://get.docker.com | sh
-echo -e "${GREEN}✓ Docker${NC}"
+ok()   { echo -e "${GREEN}✓ $1${NC}"; }
+info() { echo -e "${YELLOW}► $1${NC}"; }
 
-echo -e "${YELLOW}[2/5] kubectl...${NC}"
-if ! command -v kubectl &> /dev/null; then
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+echo "======================================"
+echo "   Bonus — Tools Installation"
+echo "======================================"
+
+info "Docker..."
+command -v docker &>/dev/null || curl -fsSL https://get.docker.com | sh
+ok "Docker"
+
+info "kubectl..."
+if ! command -v kubectl &>/dev/null; then
+    curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
     rm kubectl
 fi
-echo -e "${GREEN}✓ kubectl${NC}"
+ok "kubectl"
 
-echo -e "${YELLOW}[3/5] k3d...${NC}"
-command -v k3d || curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-echo -e "${GREEN}✓ k3d${NC}"
+info "k3d..."
+command -v k3d &>/dev/null || curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+ok "k3d"
 
-echo -e "${YELLOW}[4/5] Helm...${NC}"
-command -v helm || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-echo -e "${GREEN}✓ Helm${NC}"
+info "Helm..."
+command -v helm &>/dev/null || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+ok "Helm"
 
-echo -e "${YELLOW}[5/5] Git...${NC}"
-command -v git || apt-get install -y -qq git
-echo -e "${GREEN}✓ Git${NC}"
+info "Git..."
+command -v git &>/dev/null || apt-get install -y -qq git
+ok "Git"
 
 echo ""
-echo "All tools installed!"
+ok "All tools installed!"

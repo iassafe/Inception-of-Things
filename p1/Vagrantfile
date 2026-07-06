@@ -1,42 +1,51 @@
-ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+# Cluster configuration
+# ---------------------------------------------------------------------------------------------------------------
+SERVER_NAME = "khanhayfS"
+SERVER_IP = "192.168.56.110"
 
-SERVER_IP   = "192.168.56.110"
-WORKER_IP   = "192.168.56.111"
-NODE_TOKEN  = "/vagrant/scripts/node_token"
+WORKER_NAME = "khanhayfSW"
+WORKER_IP = "192.168.56.111"
 
+# Use Vagrant Configuration Version 2
 Vagrant.configure("2") do |config|
 
-  config.vm.box               = "debian/bookworm64"0
-  config.vm.box_check_update  = false
+  # common configuration shared by both VMs
+  # ---------------------------------------------------------------------------------------------------------------
+  # Allow extra time since K3s installation can take several minutes
+  config.vm.boot_timeout = 600
+  # define which OS image vagrant will use
+  config.vm.box = "debian/bookworm64"
 
-  config.vm.define "iassafeS" do |server|
-    server.vm.hostname = "iassafeS"
-    server.vm.network "private_network", ip: SERVER_IP
-
-    server.vm.provider "virtualbox" do |vb|
-      vb.name   = "iassafeS"
-      vb.memory = 2048
-      vb.cpus   = 1
-    end
-
-    server.vm.provision "shell",
-      path: "scripts/setup_server.sh",
-      env:  { "SERVER_IP" => SERVER_IP, "NODE_TOKEN" => NODE_TOKEN }
+  # allocate hardware resources for each VM
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 2048
+    vb.cpus = 1
   end
 
-  config.vm.define "iassafeSW" do |worker|
-    worker.vm.hostname = "iassafeSW"
+  # create a VM for the server node
+  # ---------------------------------------------------------------------------------------------------------------
+  config.vm.define SERVER_NAME do |server|
+    # sets the Linux hostname
+    server.vm.hostname = SERVER_NAME
+    
+    # assign a static private IP so the worker can reach the server
+    server.vm.network "private_network", ip: SERVER_IP
+    # This automatically creates a Host-only adapter
+    
+    # install and configure the K3s server
+    server.vm.provision "shell", path: "scripts/server.sh"
+  end
+
+  # create the worker node
+  # ---------------------------------------------------------------------------------------------------------------
+  config.vm.define WORKER_NAME do |worker|
+    # sets the Linux hostname
+    worker.vm.hostname = WORKER_NAME
+
+    # assign a static private IP used to communicate with the server
     worker.vm.network "private_network", ip: WORKER_IP
 
-    worker.vm.provider "virtualbox" do |vb|
-      vb.name   = "iassafeSW"
-      vb.memory = 2048
-      vb.cpus   = 1
-    end
-
-    worker.vm.provision "shell",
-      path: "scripts/setup_agent.sh",
-      env:  { "SERVER_IP" => SERVER_IP, "NODE_TOKEN" => NODE_TOKEN }
+    # provision the K3s worker node and join it to the cluster
+    worker.vm.provision "shell", path: "scripts/worker.sh" 
   end
-
 end
