@@ -17,8 +17,6 @@ spec:
           image: hashicorp/http-echo
           args:
             - "-text=Hello my friend, I am app2"
-          ports:
-            - containerPort: 5678
 ---
 apiVersion: v1
 kind: Service
